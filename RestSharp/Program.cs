@@ -1,29 +1,59 @@
 ﻿using System;
 using RestSharp;
 using Newtonsoft.Json;
+using System.Net;
+using System.Text;
+using System.IO;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 
 namespace RestSharp_Example
 {
     class Program
     {
+        [DataContract]
+        class Response
+        {
+            [DataMember]
+            bool error { get; set; }
+            [DataMember]
+            string description { get; set; }
+                       
+        }
         static void Main(string[] args)
         {
-                       
-            RestClient client = new RestClient();
-            client.BaseUrl = new Uri("https://gogotaxi.com.ua");
 
-            RestRequest request = new RestRequest(Method.GET);
-            request.Resource = "/api/driver/me";
-            request.AddHeader("token", "ce18c8257503ba0dfa0656ea4306d22b3933ffbe1923aaff18ecc078b5070a52");
+            var request = (HttpWebRequest)WebRequest.Create("https://gogotaxi.com.ua/api/driver/validate");
 
-            IRestResponse response = client.Execute(request);
-            string content = response.Content;
+            var postData = "phoneNumber=+380938933955";
+            
+            var data = Encoding.ASCII.GetBytes(postData);
 
-            object desContent = JsonConvert.DeserializeObject(content);
+            request.Method = "POST";
+            request.ContentType = "application/x-www-form-urlencoded";
+            request.ContentLength = data.Length;
+
+            using (var stream = request.GetRequestStream())
+            {
+                stream.Write(data, 0, data.Length);
+            }
+
+            var response = (HttpWebResponse)request.GetResponse();
+
+            var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
+            //object desContent = JsonConvert.DeserializeObject(responseString);
+                        
+            Response desContent = JsonConvert.DeserializeObject<Response>(responseString);
+
 
             Console.Write(desContent);
+            
             Console.ReadKey();
+                       
+
+
         }
     }
 }
